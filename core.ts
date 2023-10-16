@@ -1,6 +1,6 @@
 import { ChildProcessWithoutNullStreams, exec, spawn } from 'child_process'
 
-export function parseTime(str: string): number {
+export function parseToSeconds(str: string): number {
   let parts = str.split(':')
   let h = +parts[0]
   let m = +parts[1]
@@ -8,7 +8,30 @@ export function parseTime(str: string): number {
   return (h * 60 + m) * 60 + s
 }
 
-type ProgressArgs = {
+export type ScanVideoResult = {
+  duration: string
+  seconds: number
+}
+
+export function scanVideo(file: string) {
+  return new Promise<ScanVideoResult>((resolve, reject) => {
+    exec(`ffmpeg -i ${JSON.stringify(file)} 2>&1`, (err, stdout, stderr) => {
+      let match = stdout.match(/Duration: ([0-9:.]+),/)
+      if (match) {
+        let duration = match[1]
+        let seconds = parseToSeconds(duration)
+        resolve({ duration, seconds })
+        return
+      }
+      let error = new Error('failed to find video duration')
+      error.cause = err
+      Object.assign(error, { stdout })
+      reject(error)
+    })
+  })
+}
+
+export type ProgressArgs = {
   onData?: (chunk: Buffer) => void
   onDuration?: (duration: string) => void
   onTime?: (time: string) => void
@@ -19,26 +42,6 @@ type ProgressArgs = {
     time: string
     duration: string
   }) => void
-}
-
-export function scanVideo(file: string) {
-  return new Promise<{ duration: string; seconds: number }>(
-    (resolve, reject) => {
-      exec(`ffmpeg -i ${JSON.stringify(file)} 2>&1`, (err, stdout, stderr) => {
-        let match = stdout.match(/Duration: ([0-9:.]+),/)
-        if (match) {
-          let duration = match[1]
-          let seconds = parseTime(duration)
-          resolve({ duration, seconds })
-          return
-        }
-        let error = new Error('failed to find video duration')
-        error.cause = err
-        Object.assign(error, { stdout })
-        reject(error)
-      })
-    },
-  )
 }
 
 export async function convertFile(
@@ -68,7 +71,7 @@ export async function attachChildProcess(
       let match = str.match(/Duration: ([0-9:.]+),/)
       if (match) {
         duration = match[1]
-        totalSeconds = parseTime(duration)
+        totalSeconds = parseToSeconds(duration)
         if (args.onDuration) {
           args.onDuration(duration)
         }
@@ -81,7 +84,7 @@ export async function attachChildProcess(
           args.onTime(time)
         }
         if (args.onProgress) {
-          let currentSeconds = parseTime(time)
+          let currentSeconds = parseToSeconds(time)
           let deltaSeconds = currentSeconds - lastSeconds
           lastSeconds = currentSeconds
           args.onProgress({
