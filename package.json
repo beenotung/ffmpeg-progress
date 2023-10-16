@@ -1,15 +1,43 @@
 {
   "name": "ffmpeg-progress",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Extract progress from ffmpeg child_process",
+  "keywords": [
+    "ffmpeg",
+    "progress",
+    "child_process",
+    "typescript",
+    "video",
+    "convert",
+    "scan",
+    "duration"
+  ],
+  "author": {
+    "name": "Beeno Tung",
+    "email": "aabbcc1241@yahoo.com.hk",
+    "url": "https://beeno-tung.surge.sh"
+  },
+  "license": "BSD-2-Clause",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beenotung/ffmpeg-progress.git"
+  },
+  "homepage": "https://github.com/beenotung/ffmpeg-progress#readme",
+  "bugs": {
+    "url": "https://github.com/beenotung/ffmpeg-progress/issues"
+  },
+  "main": "core.js",
+  "types": "./core.d.ts",
+  "directories": {
+    "test": "test"
+  },
+  "files": [
+    "core.js"
+  ],
   "scripts": {
     "test": "tsc --noEmit",
     "build": "tsc -p ."
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "@beenotung/tslib": "^22.1.1",
     "@types/node": "^18.18.5",

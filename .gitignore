@@ -8,3 +8,7 @@ dist/
 .env
 *.tgz
 .DS_Store
+test/*.mp4
+*.d.ts
+core.js
+test.js
