@@ -6,6 +6,7 @@
     "ffmpeg",
     "progress",
     "child_process",
+    "stream",
     "typescript",
     "video",
     "convert",

@@ -1,6 +1,6 @@
 # ffmpeg-progress
 
-Extract progress from ffmpeg child_process
+Extract progress from ffmpeg child_process output stream
 
 [![npm Package Version](https://img.shields.io/npm/v/ffmpeg-progress)](https://www.npmjs.com/package/ffmpeg-progress)
 
