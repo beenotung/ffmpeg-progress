@@ -60,13 +60,16 @@ export type ProgressArgs = {
   onData?: (chunk: Buffer) => void
   onDuration?: (duration: string) => void
   onTime?: (time: string) => void
-  onProgress?: (args: {
-    deltaSeconds: number
-    currentSeconds: number
-    totalSeconds: number
-    time: string
-    duration: string
-  }) => void
+  onProgress?: (args: OnProgressArgs) => void
+}
+
+export type OnProgressArgs = {
+  deltaSeconds: number
+  currentSeconds: number
+  totalSeconds: number
+  time: string
+  duration: string
+  abort: () => void
 }
 
 export function convertFile(

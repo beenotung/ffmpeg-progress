@@ -35,13 +35,16 @@ export type ProgressArgs = {
   onData?: (chunk: Buffer) => void
   onDuration?: (duration: string) => void
   onTime?: (time: string) => void
-  onProgress?: (args: {
-    deltaSeconds: number
-    currentSeconds: number
-    totalSeconds: number
-    time: string
-    duration: string
-  }) => void
+  onProgress?: (args: OnProgressArgs) => void
+}
+
+export type OnProgressArgs = {
+  deltaSeconds: number
+  currentSeconds: number
+  totalSeconds: number
+  time: string
+  duration: string
+  abort: () => void
 }
 
 export async function convertFile(
@@ -63,6 +66,9 @@ export async function attachChildProcess(
     let time = ''
     let totalSeconds = 0
     let lastSeconds = 0
+    function abort() {
+      childProcess.kill('SIGKILL')
+    }
     if (args.onData) {
       childProcess.stdout.on('data', args.onData)
     }
@@ -93,6 +99,7 @@ export async function attachChildProcess(
             totalSeconds,
             time,
             duration,
+            abort,
           })
         }
       }
@@ -105,4 +112,16 @@ export async function attachChildProcess(
   throw new Error(
     `ffmpeg exit abnormally, exit code: ${code}, signal: ${signal}`,
   )
+}
+
+export function estimateOutSize(args: {
+  inSize: number
+  currentOutSize: number
+  currentSeconds: number
+  totalSeconds: number
+}) {
+  let estimatedRate = args.currentOutSize / args.currentSeconds
+  let remindSeconds = args.totalSeconds - args.currentSeconds
+  let estimatedOutSize = args.currentOutSize + estimatedRate * remindSeconds
+  return estimatedOutSize
 }
