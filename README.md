@@ -52,8 +52,12 @@ export function parseToSeconds(str: string): number
 export function scanVideo(file: string): Promise<ScanVideoResult>
 
 export type ScanVideoResult = {
+  /** @description e.g. "00:03:00.03" */
   duration: string
+  /** @description e.g. 180.03 */
   seconds: number
+  /** @description e.g. "4032x3024" */
+  resolution: string
 }
 
 export type ProgressArgs = {

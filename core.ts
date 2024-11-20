@@ -9,24 +9,40 @@ export function parseToSeconds(str: string): number {
 }
 
 export type ScanVideoResult = {
+  /** @description e.g. "00:03:00.03" */
   duration: string
+  /** @description e.g. 180.03 */
   seconds: number
+  /** @description e.g. "4032x3024" */
+  resolution: string
 }
 
 export function scanVideo(file: string) {
   return new Promise<ScanVideoResult>((resolve, reject) => {
     exec(`ffmpeg -i ${JSON.stringify(file)} 2>&1`, (err, stdout, stderr) => {
-      let match = stdout.match(/Duration: ([0-9:.]+),/)
-      if (match) {
+      try {
+        let match = stdout.match(/Duration: ([0-9:.]+),/)
+        if (!match) {
+          throw new Error('failed to find video duration')
+        }
         let duration = match[1]
         let seconds = parseToSeconds(duration)
-        resolve({ duration, seconds })
-        return
+
+        match = stdout.match(/Stream #0:\d.+: Video: .+ (\d+x\d+),/)
+        if (!match) {
+          throw new Error('failed to find video resolution')
+        }
+        let resolution = match[1]
+
+        resolve({ duration, seconds, resolution })
+      } catch (e) {
+        let error = e instanceof Error ? e : new Error(String(e))
+        if (err) {
+          error.cause = err
+        }
+        Object.assign(error, { stdout })
+        reject(error)
       }
-      let error = new Error('failed to find video duration')
-      error.cause = err
-      Object.assign(error, { stdout })
-      reject(error)
     })
   })
 }
