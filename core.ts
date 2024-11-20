@@ -1,6 +1,7 @@
 import { ChildProcessWithoutNullStreams, exec, spawn } from 'child_process'
 
 export function parseToSeconds(str: string): number {
+  if (str == 'N/A') return NaN
   let parts = str.split(':')
   let h = +parts[0]
   let m = +parts[1]
@@ -9,9 +10,9 @@ export function parseToSeconds(str: string): number {
 }
 
 export type ScanVideoResult = {
-  /** @description e.g. "00:03:00.03" */
+  /** @description e.g. "00:03:00.03" or "N/A" */
   duration: string
-  /** @description e.g. 180.03 */
+  /** @description e.g. 180.03 or 0 */
   seconds: number
   /** @description e.g. "4032x3024" */
   resolution: string
@@ -22,7 +23,8 @@ export function scanVideo(file: string) {
     exec(`ffmpeg -i ${JSON.stringify(file)} 2>&1`, (err, stdout, stderr) => {
       try {
         // e.g. "  Duration: 00:03:00.03, start: 0.000000, bitrate: 2234 kb/s"
-        let match = stdout.match(/Duration: ([0-9:.]+),/)
+        // e.g. "  Duration: N/A, start: 0.000000, bitrate: N/A"
+        let match = stdout.match(/Duration: ([0-9:.]+|N\/A),/)
         if (!match) {
           throw new Error('failed to find video duration')
         }
