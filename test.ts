@@ -9,10 +9,10 @@ import {
 import { statSync } from 'fs'
 
 async function main() {
-  console.log('video:', await scanVideo('test/in.mp4'))
-  let timer = startTimer('estimate duration')
   let inFile = 'test/in.mp4'
   let outFile = 'test/out.mp4'
+  console.log('video:', await scanVideo(inFile))
+  let timer = startTimer('estimate duration')
   let inSize = statSync(inFile).size
   function checkSize(args: OnProgressArgs) {
     if (!args.totalSeconds) return

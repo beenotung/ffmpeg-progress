@@ -21,6 +21,7 @@ export function scanVideo(file: string) {
   return new Promise<ScanVideoResult>((resolve, reject) => {
     exec(`ffmpeg -i ${JSON.stringify(file)} 2>&1`, (err, stdout, stderr) => {
       try {
+        // e.g. "  Duration: 00:03:00.03, start: 0.000000, bitrate: 2234 kb/s"
         let match = stdout.match(/Duration: ([0-9:.]+),/)
         if (!match) {
           throw new Error('failed to find video duration')
@@ -28,7 +29,9 @@ export function scanVideo(file: string) {
         let duration = match[1]
         let seconds = parseToSeconds(duration)
 
-        match = stdout.match(/Stream #0:\d.+: Video: .+ (\d+x\d+),/)
+        // e.g. "  Stream #0:0[0x1](und): Video: h264 (Baseline) (avc1 / 0x31637661), yuvj420p(pc, progressive), 4032x3024, 2045 kb/s, 29.73 fps, 600 tbr, 600 tbn (default)"
+        // e.g. "  Stream #0:0[0x1](eng): Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt470bg/unknown/unknown, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 3958 kb/s, 29.49 fps, 29.83 tbr, 11456 tbn (default)"
+        match = stdout.match(/Stream #0:\d.+: Video: .+ (\d+x\d+)[\s|,]/)
         if (!match) {
           throw new Error('failed to find video resolution')
         }
