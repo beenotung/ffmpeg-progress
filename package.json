@@ -1,6 +1,6 @@
 {
   "name": "ffmpeg-progress",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Extract progress from ffmpeg child_process",
   "keywords": [
     "ffmpeg",
