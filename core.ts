@@ -1,5 +1,9 @@
 import { ChildProcessWithoutNullStreams, exec, spawn } from 'child_process'
 
+/** @description
+ * from "00:01:00.03" to 60.03;
+ * from "N/A" to NaN;
+ * */
 export function parseToSeconds(str: string): number {
   if (str == 'N/A') return NaN
   let parts = str.split(':')
@@ -7,6 +11,27 @@ export function parseToSeconds(str: string): number {
   let m = +parts[1]
   let s = +parts[2]
   return (h * 60 + m) * 60 + s
+}
+
+/** @description
+ * from 60.03 to "00:01:00.03";
+ * from 60.123 to "00:01:00.123";
+ * from NaN to "N/A";
+ * */
+export function secondsToString(seconds: number): string {
+  if (isNaN(seconds)) return 'N/A'
+  let h = Math.floor(seconds / 3600)
+  let m = Math.floor((seconds % 3600) / 60)
+  let s = Math.floor(seconds % 60)
+  let ms = (seconds * 1000) % 1000
+  return ms < 100
+    ? `${d2(h)}:${d2(m)}:${d2(s)}.${d2(ms / 10)}`
+    : `${d2(h)}:${d2(m)}:${d2(s)}.${ms}`
+}
+
+function d2(x: number) {
+  if (x < 10) return '0' + x
+  return x
 }
 
 export type ScanVideoResult = {
