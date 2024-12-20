@@ -37,7 +37,8 @@
     "core.js"
   ],
   "scripts": {
-    "test": "tsc --noEmit",
+    "mocha": "ts-mocha *.test.ts",
+    "test": "npm run mocha && tsc --noEmit",
     "build": "tsc -p ."
   },
   "devDependencies": {
