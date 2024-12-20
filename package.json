@@ -37,7 +37,7 @@
     "core.js"
   ],
   "scripts": {
-    "mocha": "ts-mocha *.test.ts",
+    "mocha": "rm -f *.js && ts-mocha *.test.ts",
     "test": "npm run mocha && tsc --noEmit",
     "build": "tsc -p ."
   },

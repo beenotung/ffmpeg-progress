@@ -23,15 +23,38 @@ export function secondsToString(seconds: number): string {
   let h = Math.floor(seconds / 3600)
   let m = Math.floor((seconds % 3600) / 60)
   let s = Math.floor(seconds % 60)
-  let ms = (seconds * 1000) % 1000
-  return ms < 100
-    ? `${d2(h)}:${d2(m)}:${d2(s)}.${d2(ms / 10)}`
-    : `${d2(h)}:${d2(m)}:${d2(s)}.${ms}`
+
+  // handle precision edge case, e.g. 60.1234 % 1 = 0.12339999999999662
+  let ms: string
+  let str = seconds.toString()
+  if (str.includes('.')) {
+    ms = str.split('.')[1]
+  } else {
+    ms = ''
+  }
+
+  if (!ms) {
+    return `${d2(h)}:${d2(m)}:${d2(s)}`
+  }
+
+  return `${d2(h)}:${d2(m)}:${d2(s)}.${ms}`
 }
 
 function d2(x: number) {
   if (x < 10) return '0' + x
   return x
+}
+
+function format_ms(ms: number) {
+  // round 0.123.39999999999418 to 0.123
+  let seconds = ms / 1000
+  let str = seconds.toFixed(3)
+  seconds = +str
+  ms = seconds * 1000
+
+  if (ms < 10) return '00' + ms
+  if (ms < 100) return '0' + ms
+  return ms
 }
 
 export type ScanVideoResult = {
