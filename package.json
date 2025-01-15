@@ -37,12 +37,19 @@
     "core.js"
   ],
   "scripts": {
-    "test": "tsc --noEmit",
-    "build": "tsc -p ."
+    "test": "npm run mocha && npm run type-check",
+    "build": "tsc -p .",
+    "mocha": "ts-mocha \"*.{test,spec}.ts\"",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
     "@beenotung/tslib": "^24.1.0",
+    "@types/chai": "^4.3.20",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^22.9.0",
+    "chai": "^4.5.0",
+    "mocha": "^10.8.2",
+    "ts-mocha": "^10.0.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.6.3"

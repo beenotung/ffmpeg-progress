@@ -18,28 +18,44 @@ export type ScanVideoResult = {
   resolution: string
 }
 
+// e.g. "  Duration: 00:03:00.03, start: 0.000000, bitrate: 2234 kb/s"
+// e.g. "  Duration: N/A, start: 0.000000, bitrate: N/A"
+let duration_regex = /Duration: ([0-9:.]+|N\/A),/
+
+// e.g. "  Stream #0:0[0x1](und): Video: h264 (Baseline) (avc1 / 0x31637661), yuvj420p(pc, progressive), 4032x3024, 2045 kb/s, 29.73 fps, 600 tbr, 600 tbn (default)"
+// e.g. "  Stream #0:0[0x1](eng): Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt470bg/unknown/unknown, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 3958 kb/s, 29.49 fps, 29.83 tbr, 11456 tbn (default)"
+// e.g. "  Stream #0:0: Audio: mp3 (mp3float), 44100 Hz, stereo, fltp, 128 kb/s"
+// e.g. "  Stream #0:1: Video: flv1 (flv), yuv420p, 1080x1920, 200 kb/s, 60 fps, 60 tbr, 1k tbn"
+let resolution_regex = /Stream #0:\d[\w\[\]\(\)]*: Video: .+ (\d+x\d+)[\s|,]/
+
+export function parseVideoMetadata(stdout: string): ScanVideoResult {
+  let lines = stdout
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+
+  let match = stdout.match(duration_regex)
+  if (!match) {
+    throw new Error('failed to find video duration')
+  }
+  let duration = match[1]
+  let seconds = parseToSeconds(duration)
+
+  let line = lines.find(line => resolution_regex.test(line))
+  match = line?.match(resolution_regex)!
+  if (!match) {
+    throw new Error('failed to find video resolution')
+  }
+  let resolution = match[1]
+
+  return { duration, seconds, resolution }
+}
+
 export function scanVideo(file: string) {
   return new Promise<ScanVideoResult>((resolve, reject) => {
     exec(`ffmpeg -i ${JSON.stringify(file)} 2>&1`, (err, stdout, stderr) => {
       try {
-        // e.g. "  Duration: 00:03:00.03, start: 0.000000, bitrate: 2234 kb/s"
-        // e.g. "  Duration: N/A, start: 0.000000, bitrate: N/A"
-        let match = stdout.match(/Duration: ([0-9:.]+|N\/A),/)
-        if (!match) {
-          throw new Error('failed to find video duration')
-        }
-        let duration = match[1]
-        let seconds = parseToSeconds(duration)
-
-        // e.g. "  Stream #0:0[0x1](und): Video: h264 (Baseline) (avc1 / 0x31637661), yuvj420p(pc, progressive), 4032x3024, 2045 kb/s, 29.73 fps, 600 tbr, 600 tbn (default)"
-        // e.g. "  Stream #0:0[0x1](eng): Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt470bg/unknown/unknown, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 3958 kb/s, 29.49 fps, 29.83 tbr, 11456 tbn (default)"
-        match = stdout.match(/Stream #0:\d.+: Video: .+ (\d+x\d+)[\s|,]/)
-        if (!match) {
-          throw new Error('failed to find video resolution')
-        }
-        let resolution = match[1]
-
-        resolve({ duration, seconds, resolution })
+        resolve(parseVideoMetadata(stdout))
       } catch (e) {
         let error = e instanceof Error ? e : new Error(String(e))
         if (err) {
