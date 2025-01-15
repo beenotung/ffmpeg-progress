@@ -1,5 +1,9 @@
 import { ChildProcessWithoutNullStreams, exec, spawn } from 'child_process'
 
+/** @description
+ * from "00:01:00.03" to 60.03;
+ * from "N/A" to NaN;
+ * */
 export function parseToSeconds(str: string): number {
   if (str == 'N/A') return NaN
   let parts = str.split(':')
@@ -7,6 +11,50 @@ export function parseToSeconds(str: string): number {
   let m = +parts[1]
   let s = +parts[2]
   return (h * 60 + m) * 60 + s
+}
+
+/** @description
+ * from 60.03 to "00:01:00.03";
+ * from 60.123 to "00:01:00.123";
+ * from NaN to "N/A";
+ * */
+export function secondsToString(seconds: number): string {
+  if (isNaN(seconds)) return 'N/A'
+  let h = Math.floor(seconds / 3600)
+  let m = Math.floor((seconds % 3600) / 60)
+  let s = Math.floor(seconds % 60)
+
+  // handle precision edge case, e.g. 60.1234 % 1 = 0.12339999999999662
+  let ms: string
+  let str = seconds.toString()
+  if (str.includes('.')) {
+    ms = str.split('.')[1]
+  } else {
+    ms = ''
+  }
+
+  if (!ms) {
+    return `${d2(h)}:${d2(m)}:${d2(s)}`
+  }
+
+  return `${d2(h)}:${d2(m)}:${d2(s)}.${ms}`
+}
+
+function d2(x: number) {
+  if (x < 10) return '0' + x
+  return x
+}
+
+function format_ms(ms: number) {
+  // round 0.123.39999999999418 to 0.123
+  let seconds = ms / 1000
+  let str = seconds.toFixed(3)
+  seconds = +str
+  ms = seconds * 1000
+
+  if (ms < 10) return '00' + ms
+  if (ms < 100) return '0' + ms
+  return ms
 }
 
 export type ScanVideoResult = {

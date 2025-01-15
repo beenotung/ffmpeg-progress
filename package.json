@@ -1,6 +1,6 @@
 {
   "name": "ffmpeg-progress",
-  "version": "1.1.2",
+  "version": "1.2.1",
   "description": "Extract progress from ffmpeg child_process",
   "keywords": [
     "ffmpeg",
@@ -37,10 +37,9 @@
     "core.js"
   ],
   "scripts": {
-    "test": "npm run mocha && npm run type-check",
-    "build": "tsc -p .",
-    "mocha": "ts-mocha \"*.{test,spec}.ts\"",
-    "type-check": "tsc --noEmit"
+    "mocha": "rm -f *.js && ts-mocha \"*.{test,spec}.ts\"",
+    "test": "npm run mocha && tsc --noEmit",
+    "build": "tsc -p ."
   },
   "devDependencies": {
     "@beenotung/tslib": "^24.1.0",
