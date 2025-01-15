@@ -74,5 +74,32 @@ ${duration_line}
       let metadata = parseVideoMetadata(stdout)
       expect(metadata.resolution).to.equals('1080x1920')
     })
+    it('should skip resolution for audio file', () => {
+      let stdout = `
+${duration_line}
+  Stream #0:0: Audio: mp3 (mp3float), 44100 Hz, stereo, fltp, 128 kb/s
+`
+      let metadata = parseVideoMetadata(stdout)
+      expect(metadata.resolution).to.be.null
+    })
+  })
+
+  describe('audio sample rate', () => {
+    it('should parse audio sample rate', () => {
+      let stdout = `
+${duration_line}
+  Stream #0:0: Audio: mp3 (mp3float), 44100 Hz, stereo, fltp, 128 kb/s
+`
+      let metadata = parseVideoMetadata(stdout)
+      expect(metadata.audioSampleRate).to.equal(44100)
+    })
+    it('should skip audio sample rate for video file', () => {
+      let stdout = `
+${duration_line}
+  Stream #0:0[0x1](und): Video: h264 (Baseline) (avc1 / 0x31637661), yuvj420p(pc, progressive), 4032x3024, 2045 kb/s, 29.73 fps, 600 tbr, 600 tbn (default)
+`
+      let metadata = parseVideoMetadata(stdout)
+      expect(metadata.audioSampleRate).to.be.null
+    })
   })
 })

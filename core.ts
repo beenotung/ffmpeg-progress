@@ -63,7 +63,9 @@ export type ScanVideoResult = {
   /** @description e.g. 180.03 or 0 */
   seconds: number
   /** @description e.g. "4032x3024" */
-  resolution: string
+  resolution: string | null
+  /** @description e.g. 44100 for 44.1kHz */
+  audioSampleRate: number | null
 }
 
 // e.g. "  Duration: 00:03:00.03, start: 0.000000, bitrate: 2234 kb/s"
@@ -72,9 +74,11 @@ let duration_regex = /Duration: ([0-9:.]+|N\/A),/
 
 // e.g. "  Stream #0:0[0x1](und): Video: h264 (Baseline) (avc1 / 0x31637661), yuvj420p(pc, progressive), 4032x3024, 2045 kb/s, 29.73 fps, 600 tbr, 600 tbn (default)"
 // e.g. "  Stream #0:0[0x1](eng): Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt470bg/unknown/unknown, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 3958 kb/s, 29.49 fps, 29.83 tbr, 11456 tbn (default)"
-// e.g. "  Stream #0:0: Audio: mp3 (mp3float), 44100 Hz, stereo, fltp, 128 kb/s"
 // e.g. "  Stream #0:1: Video: flv1 (flv), yuv420p, 1080x1920, 200 kb/s, 60 fps, 60 tbr, 1k tbn"
 let resolution_regex = /Stream #0:\d[\w\[\]\(\)]*: Video: .+ (\d+x\d+)[\s|,]/
+
+// e.g. "  Stream #0:0: Audio: mp3 (mp3float), 44100 Hz, stereo, fltp, 128 kb/s"
+let audio_sample_rate_regex = /Stream #0:\d[\w\[\]\(\)]*: Audio: .+ (\d+) Hz/
 
 export function parseVideoMetadata(stdout: string): ScanVideoResult {
   let lines = stdout
@@ -89,14 +93,44 @@ export function parseVideoMetadata(stdout: string): ScanVideoResult {
   let duration = match[1]
   let seconds = parseToSeconds(duration)
 
+  let resolution = parseResolution(lines)
+  let audioSampleRate = parseAudioSampleRate(lines)
+
+  return { duration, seconds, resolution, audioSampleRate }
+}
+
+function parseResolution(lines: string[]): string | null {
+  let has_video = lines.find(
+    line => line.trim().startsWith('Stream #0:') && line.includes(' Video: '),
+  )
+  if (!has_video) return null
+
   let line = lines.find(line => resolution_regex.test(line))
-  match = line?.match(resolution_regex)!
+  let match = line?.match(resolution_regex)!
   if (!match) {
     throw new Error('failed to find video resolution')
   }
   let resolution = match[1]
+  return resolution
+}
 
-  return { duration, seconds, resolution }
+function parseAudioSampleRate(lines: string[]): number | null {
+  let has_audio = lines.find(
+    line => line.trim().startsWith('Stream #0:') && line.includes(' Audio: '),
+  )
+  if (!has_audio) return null
+  let line = lines.find(line => audio_sample_rate_regex.test(line))
+  let match = line?.match(audio_sample_rate_regex)!
+  if (!match) {
+    throw new Error('failed to find audio sample rate')
+  }
+  let audioSampleRate = +match[1]
+  if (!audioSampleRate) {
+    throw new Error(
+      `failed to parse audio sample rate: ${JSON.stringify(match[1])}`,
+    )
+  }
+  return audioSampleRate
 }
 
 export function scanVideo(file: string) {
