@@ -1,5 +1,10 @@
 import { expect } from 'chai'
-import { parseToSeconds, parseVideoMetadata, secondsToString } from './core'
+import {
+  getVideoResolution,
+  parseToSeconds,
+  parseVideoMetadata,
+  secondsToString,
+} from './core'
 
 describe('seconds parsing', () => {
   it('should parse "00:01:00.03" to 60.03', () => {
@@ -101,5 +106,12 @@ ${duration_line}
       let metadata = parseVideoMetadata(stdout)
       expect(metadata.audioSampleRate).to.be.null
     })
+  })
+})
+
+describe('getVideoResolution', () => {
+  it('should get rotated video resolution', async () => {
+    let size = await getVideoResolution('test/rotate.mp4')
+    expect(size).to.deep.equal({ width: 3024, height: 4032 })
   })
 })

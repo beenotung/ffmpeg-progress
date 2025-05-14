@@ -42,6 +42,15 @@ await convertFile({
 timer.end()
 ```
 
+**Get video resolution**:
+
+```typescript
+import { getVideoResolution } from 'ffmpeg-progress'
+
+console.log(await getVideoResolution('test/rotate.mp4'))
+// { width: 3024, height: 4032 }
+```
+
 ## Typescript Types
 
 ```typescript
@@ -88,6 +97,16 @@ export function attachChildProcess(
     childProcess: ChildProcessWithoutNullStreams
   } & ProgressArgs,
 ): Promise<void>
+
+/**
+ * take a image frame from the video,
+ * this is more accurate than parsing the resolution string in ffmpeg,
+ * because the video has rotation metadata.
+ */
+export function getVideoResolution(video_file: string): Promise<{
+  width: number
+  height: number
+}>
 ```
 
 ## License

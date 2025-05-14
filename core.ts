@@ -1,4 +1,6 @@
 import { ChildProcessWithoutNullStreams, exec, spawn } from 'child_process'
+import { unlink } from 'fs/promises'
+import { basename, join } from 'path'
 
 /** @description
  * from "00:01:00.03" to 60.03;
@@ -62,7 +64,11 @@ export type ScanVideoResult = {
   duration: string
   /** @description e.g. 180.03 or 0 */
   seconds: number
-  /** @description e.g. "4032x3024" */
+  /**
+   * @description e.g. "4032x3024"
+   * This is the stored resolution of the video, not the resolution of the video when it is played.
+   * The display image may be rotated if there are rotation metadata in the video.
+   */
   resolution: string | null
   /** @description e.g. 44100 for 44.1kHz */
   audioSampleRate: number | null
@@ -243,4 +249,81 @@ export function estimateOutSize(args: {
   let remindSeconds = args.totalSeconds - args.currentSeconds
   let estimatedOutSize = args.currentOutSize + estimatedRate * remindSeconds
   return estimatedOutSize
+}
+
+/**
+ * take a image frame from the video,
+ * this is more accurate than parsing the resolution string in ffmpeg,
+ * because the video has rotation metadata.
+ */
+export async function getVideoResolution(video_file: string) {
+  let image_file = join('/tmp/', basename(video_file) + '.jpg')
+  // ffmpeg -ss 0 -i video.mp4 -frames:v 1 -f image2 -update 1 -y image.jpg
+  let childProcess = spawn('ffmpeg', [
+    '-ss',
+    '0',
+    '-i',
+    video_file,
+    '-frames:v',
+    '1',
+    '-f',
+    'image2',
+    '-update',
+    '1',
+    '-y',
+    image_file,
+  ])
+  var { stdout, stderr, code, signal } = await waitChildProcess(childProcess)
+  if (code != 0) {
+    throw new Error(
+      `ffmpeg exit abnormally, exit code: ${code}, signal: ${signal}, stdout: ${stdout}, stderr: ${stderr}`,
+    )
+  }
+  childProcess = spawn('file', [image_file])
+  var { stdout, stderr, code, signal } = await waitChildProcess(childProcess)
+  if (code != 0) {
+    throw new Error(
+      `file exit abnormally, exit code: ${code}, signal: ${signal}, stdout: ${stdout}, stderr: ${stderr}`,
+    )
+  }
+  let resolution = parseImageResolution(stdout)
+  await unlink(image_file)
+  return resolution
+}
+
+function waitChildProcess(childProcess: ChildProcessWithoutNullStreams) {
+  return new Promise<{
+    stdout: string
+    stderr: string
+    code: number | null
+    signal: NodeJS.Signals | null
+  }>((resolve, reject) => {
+    let stdout = ''
+    let stderr = ''
+    childProcess.stdout.on('data', (data: Buffer) => {
+      stdout += data.toString()
+    })
+    childProcess.stderr.on('data', (data: Buffer) => {
+      stderr += data.toString()
+    })
+    childProcess.on('exit', (code, signal) => {
+      resolve({ stdout, stderr, code, signal })
+    })
+  })
+}
+
+// e.g. sample.jpg: JPEG image data, baseline, precision 8, 3024x4032, components 3
+function parseImageResolution(text: string) {
+  let parts = text.split(', ').reverse()
+  for (let part of parts) {
+    let parts = part.split('x')
+    if (parts.length == 2) {
+      let width = +parts[0]
+      let height = +parts[1]
+      if (width && height) {
+        return { width, height }
+      }
+    }
+  }
+  throw new Error('failed to parse image resolution: ' + JSON.stringify(text))
 }
