@@ -12,3 +12,4 @@ test/*.mp4
 *.d.ts
 core.js
 test.js
+core.test.js
