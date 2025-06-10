@@ -1,5 +1,6 @@
 import { expect } from 'chai'
 import {
+  getVideoDuration,
   getVideoResolution,
   parseToSeconds,
   parseVideoMetadata,
@@ -113,5 +114,12 @@ describe('getVideoResolution', () => {
   it('should get rotated video resolution', async () => {
     let size = await getVideoResolution('test/rotate.mp4')
     expect(size).to.deep.equal({ width: 3024, height: 4032 })
+  })
+})
+
+describe('getVideoDuration', () => {
+  it('should get video duration', async () => {
+    let duration = await getVideoDuration('test/rotate.mp4')
+    expect(duration).to.equal(15.04)
   })
 })

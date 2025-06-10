@@ -291,6 +291,30 @@ export async function getVideoResolution(video_file: string) {
   return resolution
 }
 
+/** @description get video duration in seconds, e.g. `15.04` */
+export async function getVideoDuration(video_file: string) {
+  let childProcess = spawn('ffprobe', [
+    '-v',
+    'error',
+    '-show_entries',
+    'format=duration',
+    '-of',
+    'default=noprint_wrappers=1:nokey=1',
+    video_file,
+  ])
+  var { stdout, stderr, code, signal } = await waitChildProcess(childProcess)
+  if (code != 0) {
+    throw new Error(
+      `ffprobe exit abnormally, exit code: ${code}, signal: ${signal}, stdout: ${stdout}, stderr: ${stderr}`,
+    )
+  }
+  let duration = +stdout
+  if (!duration) {
+    throw new Error('failed to parse video duration: ' + JSON.stringify(stdout))
+  }
+  return duration
+}
+
 function waitChildProcess(childProcess: ChildProcessWithoutNullStreams) {
   return new Promise<{
     stdout: string

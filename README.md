@@ -51,6 +51,15 @@ console.log(await getVideoResolution('test/rotate.mp4'))
 // { width: 3024, height: 4032 }
 ```
 
+**Get video duration in seconds**:
+
+```typescript
+import { getVideoDuration } from 'ffmpeg-progress'
+
+console.log(await getVideoDuration('test/in.mp4'))
+// 15.04 (duration in seconds)
+```
+
 ## Typescript Types
 
 ```typescript
@@ -107,6 +116,9 @@ export function getVideoResolution(video_file: string): Promise<{
   width: number
   height: number
 }>
+
+/** @description get video duration in seconds, e.g. `15.04` */
+export async function getVideoDuration(video_file: string): Promise<number>
 ```
 
 ## License
