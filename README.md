@@ -76,6 +76,20 @@ await convertFile({
 })
 ```
 
+**Rotate video**:
+
+```typescript
+import { rotateVideo } from 'ffmpeg-progress'
+
+await rotateVideo({
+  inFile: 'test/in.mp4',
+  outFile: 'test/rotated.mp4',
+  angle: 90, // Rotate 90° clockwise (or 180, 270)
+})
+```
+
+Progress monitoring is also available similar to `convertFile` using `onDuration`, `onProgress`, etc.
+
 **Get video resolution**:
 
 ```typescript
@@ -133,6 +147,15 @@ export function convertFile(
     inFile: string
     outFile: string
     ffmpegArgs?: string[]
+  } & ProgressArgs,
+): Promise<void>
+
+export function rotateVideo(
+  args: {
+    inFile: string
+    outFile: string
+    /** degrees to rotate in clockwise direction */
+    angle: 90 | 180 | 270
   } & ProgressArgs,
 ): Promise<void>
 
