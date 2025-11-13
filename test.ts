@@ -4,11 +4,12 @@ import {
   estimateOutSize,
   OnProgressArgs,
   parseToSeconds,
+  rotateVideo,
   scanVideo,
 } from './core'
 import { statSync } from 'fs'
 
-async function main() {
+async function test_convert() {
   let inFile = 'test/in.mp4'
   let outFile = 'test/out.mp4'
   console.log('video:', await scanVideo(inFile))
@@ -48,4 +49,24 @@ async function main() {
   })
   timer.end()
 }
-main().catch(e => console.error(e))
+
+async function test_rotation() {
+  let inFile = 'test/in.mp4'
+  let outFile = 'test/rotate.mp4'
+  let timer = startTimer('rotate video')
+  await rotateVideo({
+    inFile,
+    outFile,
+    angle: 90,
+    onDuration(duration) {
+      timer.next('rotate video')
+      timer.setEstimateProgress(parseToSeconds(duration))
+    },
+    onProgress(args) {
+      timer.tick(args.deltaSeconds)
+    },
+  })
+  timer.end()
+}
+
+test_rotation().catch(e => console.error(e))

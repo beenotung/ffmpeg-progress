@@ -189,6 +189,40 @@ export async function convertFile(
   return attachChildProcess({ childProcess, ...args })
 }
 
+export async function rotateVideo(
+  args: {
+    inFile: string
+    outFile: string
+    /** degrees to rotate in clockwise direction */
+    angle: 90 | 180 | 270
+  } & ProgressArgs,
+) {
+  let filter: string
+  switch (args.angle) {
+    case 90:
+      // 90° clockwise
+      filter = 'transpose=1'
+      break
+    case 180:
+      // 180° rotation
+      filter = 'transpose=1,transpose=1'
+      break
+    case 270:
+      // 270° clockwise (or 90° counterclockwise)
+      filter = 'transpose=2'
+      break
+    default:
+      throw new Error(
+        `Unsupported rotation angle: ${args.angle}. Supported angles are 90, 180, or 270 degrees.`,
+      )
+  }
+
+  return convertFile({
+    ...args,
+    ffmpegArgs: ['-vf', filter, '-c:a', 'copy'],
+  })
+}
+
 export async function attachChildProcess(
   args: { childProcess: ChildProcessWithoutNullStreams } & ProgressArgs,
 ) {
