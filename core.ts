@@ -173,9 +173,19 @@ export type OnProgressArgs = {
 }
 
 export async function convertFile(
-  args: { inFile: string; outFile: string } & ProgressArgs,
+  args: {
+    inFile: string
+    outFile: string
+    /** e.g. ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-b:v', '2000k'] */
+    ffmpegArgs?: string[]
+  } & ProgressArgs,
 ) {
-  let childProcess = spawn('ffmpeg', ['-y', '-i', args.inFile, args.outFile])
+  let ffmpegCommand = ['-y', '-i', args.inFile]
+  if (args.ffmpegArgs) {
+    ffmpegCommand.push(...args.ffmpegArgs)
+  }
+  ffmpegCommand.push(args.outFile)
+  let childProcess = spawn('ffmpeg', ffmpegCommand)
   return attachChildProcess({ childProcess, ...args })
 }
 

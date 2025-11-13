@@ -42,6 +42,40 @@ await convertFile({
 timer.end()
 ```
 
+**Convert video with custom FFmpeg arguments**:
+
+```typescript
+import { convertFile } from 'ffmpeg-progress'
+
+// H.264 codec with YUV420p pixel format and 2000k bitrate
+await convertFile({
+  inFile: 'input.mp4',
+  outFile: 'output.mp4',
+  ffmpegArgs: ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-b:v', '2000k'],
+})
+
+// Resize video - Scale to 720p
+await convertFile({
+  inFile: 'input.mp4',
+  outFile: 'output.mp4',
+  ffmpegArgs: ['-vf', 'scale=1280:720'],
+})
+
+// Extract audio - Convert video to MP3
+await convertFile({
+  inFile: 'input.mp4',
+  outFile: 'output.mp3',
+  ffmpegArgs: ['-vn', '-acodec', 'libmp3lame', '-ab', '192k'],
+})
+
+// Quality preset - Use H.264 with slow preset and CRF quality
+await convertFile({
+  inFile: 'input.mp4',
+  outFile: 'output.mp4',
+  ffmpegArgs: ['-c:v', 'libx264', '-preset', 'slow', '-crf', '23'],
+})
+```
+
 **Get video resolution**:
 
 ```typescript
@@ -98,6 +132,7 @@ export function convertFile(
   args: {
     inFile: string
     outFile: string
+    ffmpegArgs?: string[]
   } & ProgressArgs,
 ): Promise<void>
 
