@@ -112,14 +112,20 @@ ${duration_line}
 
 describe('getVideoResolution', () => {
   it('should get rotated video resolution', async () => {
-    let size = await getVideoResolution('test/rotate.mp4')
-    expect(size).to.deep.equal({ width: 3024, height: 4032 })
+    let size = await getVideoResolution('test/in.mp4')
+    expect(size).to.deep.equal({ width: 848, height: 480 })
+
+    size = await getVideoResolution('test/rotate.mp4')
+    expect(size).to.deep.equal({ width: 480, height: 848 })
   })
 })
 
 describe('getVideoDuration', () => {
   it('should get video duration', async () => {
-    let duration = await getVideoDuration('test/rotate.mp4')
-    expect(duration).to.equal(15.04)
+    let duration = await getVideoDuration('test/in.mp4')
+    expect(duration).to.equal(23.4)
+
+    duration = await getVideoDuration('test/rotate.mp4')
+    expect(duration).to.equal(23.4)
   })
 })
