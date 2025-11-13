@@ -180,6 +180,11 @@ export async function convertFile(
     ffmpegArgs?: string[]
   } & ProgressArgs,
 ) {
+  if (args.inFile === args.outFile) {
+    throw new Error(
+      'ffmpeg cannot edit files in-place, input and output file cannot be the same.',
+    )
+  }
   let ffmpegCommand = ['-y', '-i', args.inFile]
   if (args.ffmpegArgs) {
     ffmpegCommand.push(...args.ffmpegArgs)
