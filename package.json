@@ -29,6 +29,9 @@
   },
   "main": "core.js",
   "types": "./core.d.ts",
+  "bin": {
+    "ffmpeg-progress": "./bin.js"
+  },
   "directories": {
     "test": "test"
   },
