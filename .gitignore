@@ -13,3 +13,4 @@ test/*.mp4
 core.js
 test.js
 core.test.js
+cli.js
