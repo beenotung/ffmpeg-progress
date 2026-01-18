@@ -42,7 +42,8 @@
     "core.js"
   ],
   "scripts": {
-    "mocha": "rm -f *.js && ts-mocha \"*.{test,spec}.ts\"",
+    "clean": "rm -f *.js && git checkout bin.js",
+    "mocha": "npm run clean && ts-mocha \"*.{test,spec}.ts\"",
     "test": "npm run mocha && tsc --noEmit",
     "build": "tsc -p ."
   },
