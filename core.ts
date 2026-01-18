@@ -1,6 +1,12 @@
-import { ChildProcessWithoutNullStreams, exec, spawn } from 'child_process'
+import {
+  ChildProcessByStdio,
+  ChildProcessWithoutNullStreams,
+  exec,
+  spawn,
+} from 'child_process'
 import { unlink } from 'fs/promises'
 import { basename, join } from 'path'
+import Stream from 'stream'
 
 /** @description
  * from "00:01:00.03" to 60.03;
@@ -157,6 +163,7 @@ export function scanVideo(file: string) {
 }
 
 export type ProgressArgs = {
+  onStderr?: (chunk: Buffer) => void
   onData?: (chunk: Buffer) => void
   onDuration?: (duration: string) => void
   onTime?: (time: string) => void
@@ -229,54 +236,28 @@ export async function rotateVideo(
 }
 
 export async function attachChildProcess(
-  args: { childProcess: ChildProcessWithoutNullStreams } & ProgressArgs,
+  args: {
+    childProcess:
+      | ChildProcessWithoutNullStreams
+      | ChildProcessByStdio<null, Stream.Readable, Stream.Readable>
+  } & ProgressArgs,
 ) {
   let { code, signal } = await new Promise<{
     code: number | null
     signal: NodeJS.Signals | null
   }>((resolve, reject) => {
     let { childProcess } = args
-    let duration = ''
-    let time = ''
-    let totalSeconds = 0
-    let lastSeconds = 0
     function abort() {
       childProcess.kill('SIGKILL')
     }
     if (args.onData) {
       childProcess.stdout.on('data', args.onData)
     }
-    childProcess.stderr.on('data', (data: Buffer) => {
-      let str = data.toString()
-      let match = str.match(/Duration: ([0-9:.]+),/)
-      if (match) {
-        duration = match[1]
-        totalSeconds = parseToSeconds(duration)
-        if (args.onDuration) {
-          args.onDuration(duration)
-        }
-        return
-      }
-      match = str.match(/frame=\s*\d+\s+fps=.*time=([0-9:.]+)\s/)
-      if (match) {
-        time = match[1]
-        if (args.onTime) {
-          args.onTime(time)
-        }
-        if (args.onProgress) {
-          let currentSeconds = parseToSeconds(time)
-          let deltaSeconds = currentSeconds - lastSeconds
-          lastSeconds = currentSeconds
-          args.onProgress({
-            deltaSeconds,
-            currentSeconds,
-            totalSeconds,
-            time,
-            duration,
-            abort,
-          })
-        }
-      }
+    attachStream({
+      stream: childProcess.stderr,
+      onData: undefined,
+      abort,
+      ...args,
     })
     childProcess.on('exit', (code, signal) => {
       resolve({ code, signal })
@@ -286,6 +267,57 @@ export async function attachChildProcess(
   throw new Error(
     `ffmpeg exit abnormally, exit code: ${code}, signal: ${signal}`,
   )
+}
+
+export function attachStream(
+  args: {
+    stream: Stream.Readable
+    abort?: () => void
+  } & ProgressArgs,
+) {
+  let abort = args.abort || (() => {})
+  let duration = ''
+  let time = ''
+  let totalSeconds = 0
+  let lastSeconds = 0
+  return args.stream.on('data', (data: Buffer) => {
+    if (args.onData) {
+      args.onData(data)
+    }
+    if (args.onStderr) {
+      args.onStderr(data)
+    }
+    let str = data.toString()
+    let match = str.match(/Duration: ([0-9:.]+),/)
+    if (match) {
+      duration = match[1]
+      totalSeconds = parseToSeconds(duration)
+      if (args.onDuration) {
+        args.onDuration(duration)
+      }
+      return
+    }
+    match = str.match(/frame=\s*\d+\s+fps=.*time=([0-9:.]+)\s/)
+    if (match) {
+      time = match[1]
+      if (args.onTime) {
+        args.onTime(time)
+      }
+      if (args.onProgress) {
+        let currentSeconds = parseToSeconds(time)
+        let deltaSeconds = currentSeconds - lastSeconds
+        lastSeconds = currentSeconds
+        args.onProgress({
+          deltaSeconds,
+          currentSeconds,
+          totalSeconds,
+          time,
+          duration,
+          abort,
+        })
+      }
+    }
+  })
 }
 
 export function estimateOutSize(args: {
