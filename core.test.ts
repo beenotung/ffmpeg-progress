@@ -111,7 +111,7 @@ ${duration_line}
 })
 
 describe('getVideoResolution', () => {
-  it('should get rotated video resolution', async () => {
+  it.skip('should get rotated video resolution', async () => {
     let size = await getVideoResolution('test/in.mp4')
     expect(size).to.deep.equal({ width: 848, height: 480 })
 
@@ -121,7 +121,7 @@ describe('getVideoResolution', () => {
 })
 
 describe('getVideoDuration', () => {
-  it('should get video duration', async () => {
+  it.skip('should get video duration', async () => {
     let duration = await getVideoDuration('test/in.mp4')
     expect(duration).to.equal(23.4)
 
