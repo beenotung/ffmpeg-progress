@@ -7,6 +7,9 @@ import {
 } from './core'
 
 let args = process.argv.slice(2)
+let custom_args: string[] = []
+
+let verbose = false
 
 for (let arg of args) {
   if (arg == '-h' || arg == '--help') {
@@ -26,9 +29,13 @@ EXAMPLES:
   # pipe from ffmpeg output (need to redirect stderr):
   ffmpeg -i input.mp4 -c:v libx264 output.mp4 2>&1 | ffmpeg-progress
 
+  # using calling other script that use ffmpeg indirectly
+  to-mp4 --auto-name input.mov | ffmpeg-progress
+
 OPTIONS:
   -h, --help     show this help message and exit
   --version      show version and exit
+  --verbose      verbose mode
 
 NOTES:
   - Pipe mode requires redirecting ffmpeg stderr to stdout (2>&1)
@@ -43,7 +50,14 @@ NOTES:
     console.log(`ffmpeg-progress ${pkg.version}`)
     process.exit(0)
   }
+  if (arg == '--verbose') {
+    verbose = true
+    custom_args.push(arg)
+    continue
+  }
 }
+
+args = args.filter(arg => !custom_args.includes(arg))
 
 let errorLines: string[] = []
 function checkOverwrite(chunk: Buffer) {
@@ -83,26 +97,30 @@ function onProgress(args: OnProgressArgs) {
 }
 
 if (args.length == 0) {
-  console.log('reading ffmpeg output from pipe...')
+  writeProgress('reading ffmpeg output from pipe...')
   attachStream({
     stream: process.stdin,
     onData: checkOverwrite,
     onProgress,
   }).on('end', () => {
     process.stdout.write('\n')
-    console.log('end of ffmpeg output.')
+    if (verbose) {
+      console.log('end of ffmpeg output.')
+    }
   })
 } else {
-  let cmd = 'ffmpeg'
-  for (let arg of args) {
-    let str = JSON.stringify(arg)
-    if (str == `"${arg}"`) {
-      cmd += ' ' + arg
-    } else {
-      cmd += ' ' + str
+  if (verbose) {
+    let cmd = 'ffmpeg'
+    for (let arg of args) {
+      let str = JSON.stringify(arg)
+      if (str == `"${arg}"`) {
+        cmd += ' ' + arg
+      } else {
+        cmd += ' ' + str
+      }
     }
+    console.log('> ' + cmd)
   }
-  console.log('> ' + cmd)
   let childProcess = spawn('ffmpeg', args, {
     stdio: ['inherit', 'pipe', 'pipe'],
   })
@@ -113,7 +131,9 @@ if (args.length == 0) {
   })
     .then(() => {
       process.stdout.write('\n')
-      console.log('ffmpeg process finished.')
+      if (verbose) {
+        console.log('ffmpeg process finished.')
+      }
     })
     .catch(error => {
       process.stderr.write('\n')
