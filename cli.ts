@@ -28,7 +28,7 @@ EXAMPLES:
 
 OPTIONS:
   -h, --help     show this help message and exit
-  -v, --version  show version and exit
+  --version      show version and exit
 
 NOTES:
   - Pipe mode requires redirecting ffmpeg stderr to stdout (2>&1)
