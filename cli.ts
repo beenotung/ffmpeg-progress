@@ -96,8 +96,27 @@ function onProgress(args: OnProgressArgs) {
   )
 }
 
+function timestamp() {
+  let date = new Date()
+  let y = date.getFullYear()
+  let m = (date.getMonth() + 1).toString().padStart(2, '0')
+  let d = date.getDate().toString().padStart(2, '0')
+  let H = date.getHours().toString().padStart(2, '0')
+  let M = date.getMinutes().toString().padStart(2, '0')
+  let S = date.getSeconds().toString().padStart(2, '0')
+  return `${y}-${m}-${d} ${H}:${M}:${S}`
+}
+
+function logVerbose(message: string) {
+  console.log(`[${timestamp()}] ${message}`)
+}
+
 if (args.length == 0) {
-  writeProgress('reading ffmpeg output from pipe...')
+  if (verbose) {
+    logVerbose('reading ffmpeg output from pipe...')
+  } else {
+    writeProgress('reading ffmpeg output from pipe...')
+  }
   attachStream({
     stream: process.stdin,
     onData: checkOverwrite,
@@ -105,7 +124,7 @@ if (args.length == 0) {
   }).on('end', () => {
     process.stdout.write('\n')
     if (verbose) {
-      console.log('end of ffmpeg output.')
+      logVerbose('end of ffmpeg output.')
     }
   })
 } else {
@@ -120,6 +139,7 @@ if (args.length == 0) {
       }
     }
     console.log('> ' + cmd)
+    logVerbose('starting ffmpeg process...')
   }
   let childProcess = spawn('ffmpeg', args, {
     stdio: ['inherit', 'pipe', 'pipe'],
@@ -132,10 +152,13 @@ if (args.length == 0) {
     .then(() => {
       process.stdout.write('\n')
       if (verbose) {
-        console.log('ffmpeg process finished.')
+        logVerbose('ffmpeg process finished.')
       }
     })
     .catch(error => {
+      if (verbose) {
+        logVerbose('ffmpeg process failed.')
+      }
       process.stderr.write('\n')
       for (let line of errorLines) {
         console.error(line)
