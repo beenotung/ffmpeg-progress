@@ -1,7 +1,10 @@
 import { expect } from 'chai'
+import { Readable } from 'stream'
 import {
+  attachStream,
   getVideoDuration,
   getVideoResolution,
+  OnProgressArgs,
   parseToSeconds,
   parseVideoMetadata,
   secondsToString,
@@ -127,5 +130,54 @@ describe('getVideoDuration', () => {
 
     duration = await getVideoDuration('test/rotate.mp4')
     expect(duration).to.equal(23.4)
+  })
+})
+
+describe('attachStream', () => {
+  let duration_line =
+    '  Duration: 00:01:00.00, start: 0.000000, bitrate: 1234 kb/s'
+
+  function progress_line(time: string) {
+    return `frame=  100 fps=30 q=28.0 size=1024kB time=${time} bitrate=1.0kbits/s speed=2x`
+  }
+
+  async function collect(chunks: string[]) {
+    let stream = Readable.from(chunks.map(chunk => Buffer.from(chunk)))
+    let progress: OnProgressArgs[] = []
+    let ended = new Promise<void>(resolve => stream.on('end', resolve))
+    attachStream({ stream, onProgress: args => progress.push(args) })
+    await ended
+    return progress
+  }
+
+  it('should parse multiple progress lines in one chunk', async () => {
+    let progress = await collect([
+      duration_line +
+        '\r' +
+        progress_line('00:00:01.00') +
+        '\r' +
+        progress_line('00:00:02.00') +
+        '\r',
+    ])
+    expect(progress.map(args => args.time)).to.deep.equal([
+      '00:00:01.00',
+      '00:00:02.00',
+    ])
+    expect(progress.map(args => args.deltaSeconds)).to.deep.equal([1, 1])
+    // the duration line in the same chunk should not block the progress lines
+    expect(progress.map(args => args.totalSeconds)).to.deep.equal([60, 60])
+  })
+
+  it('should parse a progress line split across chunks', async () => {
+    let progress = await collect([
+      'frame=  100 fps=30 q=28.0 size=1024kB time=00:0',
+      '0:03.00 bitrate=1.0kbits/s speed=2x\r',
+    ])
+    expect(progress.map(args => args.time)).to.deep.equal(['00:00:03.00'])
+  })
+
+  it('should parse the last line without a trailing newline', async () => {
+    let progress = await collect([progress_line('00:00:05.00')])
+    expect(progress.map(args => args.time)).to.deep.equal(['00:00:05.00'])
   })
 })

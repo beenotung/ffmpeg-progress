@@ -280,14 +280,12 @@ export function attachStream(
   let time = ''
   let totalSeconds = 0
   let lastSeconds = 0
-  return args.stream.on('data', (data: Buffer) => {
-    if (args.onData) {
-      args.onData(data)
-    }
-    if (args.onStderr) {
-      args.onStderr(data)
-    }
-    let str = data.toString()
+
+  // ffmpeg separates progress lines with '\r', and one chunk may contain
+  // multiple lines or end in the middle of one
+  let pending = ''
+
+  function handleLine(str: string) {
     let match = str.match(/Duration: ([0-9:.]+),/)
     if (match) {
       duration = match[1]
@@ -297,7 +295,7 @@ export function attachStream(
       }
       return
     }
-    match = str.match(/frame=\s*\d+\s+fps=.*time=([0-9:.]+)\s/)
+    match = str.match(/frame=\s*\d+\s+fps=.*time=([0-9:.]+)/)
     if (match) {
       time = match[1]
       if (args.onTime) {
@@ -317,7 +315,28 @@ export function attachStream(
         })
       }
     }
-  })
+  }
+
+  return args.stream
+    .on('data', (data: Buffer) => {
+      if (args.onData) {
+        args.onData(data)
+      }
+      if (args.onStderr) {
+        args.onStderr(data)
+      }
+      pending += data.toString()
+      let lines = pending.split(/\r\n|\r|\n/)
+      pending = lines.pop() || ''
+      for (let line of lines) {
+        handleLine(line)
+      }
+    })
+    .on('end', () => {
+      let line = pending
+      pending = ''
+      if (line) handleLine(line)
+    })
 }
 
 export function estimateOutSize(args: {
